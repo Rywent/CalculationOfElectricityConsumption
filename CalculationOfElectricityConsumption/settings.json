@@ -1,4 +1,7 @@
 {
-  "CostPerKwh": 6,
-  "TotalPowerConsumption": 0.0
+  "CostPerKwh": 8.84,
+  "TotalPowerConsumption": 0,
+  "TotalHours": 0,
+  "TotalCost":0,
+  "LastSavedDate": ""
 }

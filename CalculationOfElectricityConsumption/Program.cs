@@ -6,18 +6,22 @@ using System.Timers;
 
 class Program
 {
-    static int measurementsCount = 0;
     static double totalPowerConsumption; // Watt-hours
     static double costPerKwh; // cost per kWh
 
+    static double totalHours;
+    static double totalCost;
+    static DateTime lastSavedDate;
+
+
     static System.Timers.Timer measurementTimer;
-    static DateTime dayStart = DateTime.Today;
 
     static ComputerMonitoring _monitoring = new ComputerMonitoring();
 
     static void Main(string[] args)
     {
         LoadSettings();
+        LoadLogForToday();
 
         string output = _monitoring.ToString();
         Console.WriteLine(output);
@@ -50,45 +54,80 @@ class Program
 
         Console.WriteLine($"{DateTime.Now}: {_monitoring.ToString()}");
 
-        double intervalHours = measurementTimer.Interval / (1000.0 * 60.0 * 60.0); // convert milliseconds to hours
+        double intervalHours = measurementTimer.Interval / (1000.0 * 60.0 * 60.0); // milliseconds to hours
 
-        double energyUsed = currentTotalPower * intervalHours; // watt-hours for the interval
-        totalPowerConsumption += energyUsed;
-        measurementsCount++;
+        double energyUsed = currentTotalPower * intervalHours; // watt per hour for the interval
 
-        if (DateTime.Now.Date != dayStart)
+        // checking the date change
+        if (DateTime.Now.Date != lastSavedDate.Date)
         {
+            // saving the accumulated data from the previous day
             SaveData();
-            dayStart = DateTime.Now.Date;
+
+            // saving settings after logging
+            SaveSettings();
+
+            // resetting the accumulations for a new day
             totalPowerConsumption = 0;
-            measurementsCount = 0;
+            totalHours = 0;
+            totalCost = 0;
+
+            // updating the last saved date
+            lastSavedDate = DateTime.Now.Date;
         }
+
+
+        // accumulation
+        totalPowerConsumption += energyUsed;
+        totalHours += intervalHours;
+        totalCost = (totalPowerConsumption / 1000.0) * costPerKwh;
+
+        Console.WriteLine($"Accumulated: Time: {totalHours:F2} ч, Energy: {totalPowerConsumption:F2} Вт·ч, Cost: {totalCost:F2}");
     }
 
     static void SaveData()
     {
-        if (measurementsCount == 0) return;
+        if (totalHours == 0) return;
 
-        double totalHours = measurementsCount * measurementTimer.Interval / (1000.0 * 60 * 60);
-        double cost = totalPowerConsumption / 1000.0 * costPerKwh;
+        string dateStr = lastSavedDate.ToString("yyyy-MM-dd");
+        string newRecord = $"{dateStr} Activity: {totalHours:F2} ч, Consumed: {totalPowerConsumption:F2} Вт·ч, Cost: {totalCost:F2} руб.";
 
-        string record = $"{dayStart:yyyy-MM-dd} Activity: {totalHours:F2} ч, " +
-                        $"Consumed: {totalPowerConsumption:F2} Вт·ч, Cost: {cost}$." + $" Total measurements: {measurementsCount}    ";
+        Console.WriteLine("Saving data: " + newRecord);
 
-        Console.WriteLine("Saving data: " + record);
-
+        string logFile = "energy_log.txt";
         string tempFileName = "energy_log.tmp";
-        string mainFileName = "energy_log.txt";
         string errorFile = "error_log.txt";
 
         try
         {
-            File.WriteAllText(tempFileName, record + Environment.NewLine);
+            string[] lines = File.Exists(logFile) ? File.ReadAllLines(logFile) : Array.Empty<string>();
+            bool foundToday = false;
 
-            if (File.Exists(mainFileName))
-                File.Delete(mainFileName);
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (lines[i].StartsWith(dateStr))
+                {
+                    lines[i] = newRecord;
+                    foundToday = true;
+                    break;
+                }
+            }
+            if (!foundToday)
+            {
+                // Adding a new entry
+                var tempList = new List<string>(lines) { newRecord };
+                lines = tempList.ToArray();
+            }
 
-            File.Move(tempFileName, mainFileName);
+            // we write the entire file through a temporary file
+            File.WriteAllLines(tempFileName, lines);
+
+            if (File.Exists(logFile))
+                File.Delete(logFile);
+
+            File.Move(tempFileName, logFile);
+
+            SaveSettings();
         }
         catch (Exception ex)
         {
@@ -110,6 +149,9 @@ class Program
                 {
                     costPerKwh = settings.CostPerKwh;
                     totalPowerConsumption = settings.TotalPowerConsumption;
+                    totalHours = settings.TotalHours;
+                    totalCost = settings.TotalCost;   
+                    lastSavedDate = settings.LastSavedDate; 
                 }
             }
             catch (Exception ex)
@@ -120,9 +162,11 @@ class Program
         else
         {
             Console.WriteLine("Configuration file not found, default values will be used");
+            totalHours = 0;
+            totalCost = 0;
+            lastSavedDate = DateTime.Today;
         }
     }
-
     static void SaveSettings()
     {
         string fileName = "settings.json";
@@ -132,6 +176,9 @@ class Program
             {
                 CostPerKwh = costPerKwh,
                 TotalPowerConsumption = totalPowerConsumption,
+                TotalHours = totalHours,
+                TotalCost = totalCost,
+                LastSavedDate = lastSavedDate
             };
 
             var options = new JsonSerializerOptions { WriteIndented = true };
@@ -143,4 +190,54 @@ class Program
             Console.WriteLine($"Error saving settings: {ex.Message}");
         }
     }
+
+    static void LoadLogForToday()
+    {
+        string logFile = "energy_log.txt";
+        if (!File.Exists(logFile))
+        {
+            return;
+        }
+
+        string todayStr = DateTime.Today.ToString("yyyy-MM-dd");
+        string[] lines = File.ReadAllLines(logFile);
+
+        foreach (var line in lines)
+        {
+            if (line.StartsWith(todayStr))
+            {
+                var parts = line.Split(',');
+                if (parts.Length >= 3)
+                {
+                    try
+                    {
+                        // parsing Activity
+                        var actPart = parts[0].Split(new[] { "Activity:" }, StringSplitOptions.None)[1].Trim().Split(' ')[0];
+                        totalHours = double.Parse(actPart);
+
+                        // parsing Consumed
+                        var consPart = parts[1].Split(new[] { "Consumed:" }, StringSplitOptions.None)[1].Trim().Split(' ')[0];
+                        totalPowerConsumption = double.Parse(consPart);
+
+                        // parsing Cost
+                        var costPart = parts[2].Split(new[] { "Cost:" }, StringSplitOptions.None)[1].Trim().Split(' ')[0];
+                        totalCost = double.Parse(costPart);
+                    }
+                    catch
+                    {
+                        // on parsing error - reset
+                        totalHours = 0;
+                        totalPowerConsumption = 0;
+                        totalCost = 0;
+                    }
+                }
+                return; // found and uploaded
+            }
+        }
+        // if there are no records for today
+        totalHours = 0;
+        totalPowerConsumption = 0;
+        totalCost = 0;
+    }
+
 }
