@@ -6,7 +6,7 @@ This project is a simple C# console application that monitors your PC's CPU load
 
 ## Features
 
-- Measures CPU usage periodically (every 5 minutes).
+- Measures CPU usage periodically (every 3 minutes).
 - Measures GPU usage, memory load, and storage activity for more comprehensive monitoring.
 - Calculates estimated power consumption based on combined load metrics and a base power consumption value.
 - Saves the daily summary of electricity consumption and cost to a log file.
@@ -18,7 +18,7 @@ This project is a simple C# console application that monitors your PC's CPU load
 ## Requirements
 
 - .NET Core 3.1 or later / .NET 5 or later
-- Windows OS (due to usage of PerformanceCounter API)
+- Windows OS (due to usage of LibreHardwareMonitor)
 - Basic knowledge of running console applications
 
 ---
@@ -53,7 +53,7 @@ dotnet build
 dotnet run
 
 
-The console will output CPU, GPU, memory, and storage usage and update the consumption data every 5 minutes. Press **Enter** to stop the program safely, which will save the final data.
+The console will output CPU, GPU, memory, and storage usage and update the consumption data every 3 minutes. Press **Enter** to stop the program safely, which will save the final data.
 
 ---
 
@@ -66,7 +66,7 @@ The console will output CPU, GPU, memory, and storage usage and update the consu
 
 ## Notes
 
-- The program uses Windows PerformanceCounter API, so it works on Windows OS only.
+- The program usesLibreHardwareMonitor, so it works on Windows OS only.
 - Make sure to run the program with appropriate permissions to access performance counters.
 - For accurate power ratings, consider measuring your PC power consumption with a wattmeter.
 - Now the application calculates estimated consumption based not only on CPU load but also includes GPU usage, memory load, and storage activity, providing more precise and realistic power consumption estimates.
