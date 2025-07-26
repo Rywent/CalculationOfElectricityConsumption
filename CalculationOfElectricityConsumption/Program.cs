@@ -73,7 +73,7 @@ class Program
         double cost = totalPowerConsumption / 1000.0 * costPerKwh;
 
         string record = $"{dayStart:yyyy-MM-dd} Activity: {totalHours:F2} ч, " +
-                        $"Consumed: {totalPowerConsumption:F2} Вт·ч, Cost: {cost:F2}$." + $" Total measurements: {measurementsCount}    ";
+                        $"Consumed: {totalPowerConsumption:F2} Вт·ч, Cost: {cost}$." + $" Total measurements: {measurementsCount}    ";
 
         Console.WriteLine("Saving data: " + record);
 
