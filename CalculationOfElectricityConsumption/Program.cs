@@ -19,6 +19,9 @@ class Program
     {
         LoadSettings();
 
+        string output = _monitoring.ToString();
+        Console.WriteLine(output);
+
         SetTimer();
 
         Console.WriteLine("Press Enter to exit...");
@@ -32,8 +35,8 @@ class Program
 
     static void SetTimer()
     {
-        // 5 minutes interval
-        measurementTimer = new System.Timers.Timer(300000);
+        // 3 minutes interval
+        measurementTimer = new System.Timers.Timer(180000);
 
         measurementTimer.Elapsed += MeasurementTimer_Elapsed;
         measurementTimer.AutoReset = true;
@@ -45,7 +48,7 @@ class Program
         _monitoring.GetInfoPC();
         float currentTotalPower = _monitoring.GetTotalPower();
 
-        Console.WriteLine($"{DateTime.Now}: Total Power: {currentTotalPower:F2} W");
+        Console.WriteLine($"{DateTime.Now}: {_monitoring.ToString()}");
 
         double intervalHours = measurementTimer.Interval / (1000.0 * 60.0 * 60.0); // convert milliseconds to hours
 
@@ -53,7 +56,7 @@ class Program
         totalPowerConsumption += energyUsed;
         measurementsCount++;
 
-        if (DateTime.Now.Date > dayStart)
+        if (DateTime.Now.Date != dayStart)
         {
             SaveData();
             dayStart = DateTime.Now.Date;
@@ -70,8 +73,7 @@ class Program
         double cost = totalPowerConsumption / 1000.0 * costPerKwh;
 
         string record = $"{dayStart:yyyy-MM-dd} Activity: {totalHours:F2} ч, " +
-                        $"Consumed: {totalPowerConsumption:F2} Вт·ч, Cost: {cost:F2}$." + $" Total measurements: {measurementsCount}    " +
-                        _monitoring.ToString();
+                        $"Consumed: {totalPowerConsumption:F2} Вт·ч, Cost: {cost:F2}$." + $" Total measurements: {measurementsCount}    ";
 
         Console.WriteLine("Saving data: " + record);
 

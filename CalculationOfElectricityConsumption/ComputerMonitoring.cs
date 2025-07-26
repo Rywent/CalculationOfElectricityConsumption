@@ -180,7 +180,7 @@ namespace CalculationOfElectricityConsumption
                $"GPU Load: {GetGpuLoadAverage():F2}% | GPU Temp: {GetGpuTemperatureAverage():F2} °C | " +
                $"Memory Load: {GetMemoryLoadAverage():F2}% | Memory Temp: {GetMemoryTemperatureAverage():F2} °C | " +
                $"Storage Load: {GetStorageLoadAverage():F2}% | Storage Temp: {GetStorageTemperatureAverage():F2} °C | " +
-               $"Total Power: {GetTotalPower():F2} W";
+               $"Current Power: {GetTotalPower():F2} W";
         }
     }
 }
